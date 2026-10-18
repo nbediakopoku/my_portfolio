@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { PROJECTS, TESTIMONIALS, SKILLS, CATEGORIES } from "./data";
+import { PROJECTS, TESTIMONIALS, SKILLS, CATEGORIES, SHOW_CV } from "./data";
+
+const BASE = import.meta.env.BASE_URL;
 
 function useInView(options = {}) {
   const ref = useRef(null);
@@ -55,6 +57,8 @@ export default function Portfolio() {
   const [skillsRef, skillsInView] = useInView();
   const [projRef, projInView] = useInView();
   const [testRef, testInView] = useInView();
+  const [formData, setFormData] = useState({ name: "", email: "", subject: "", message: "" });
+  const [formStatus, setFormStatus] = useState("idle");
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -78,6 +82,52 @@ export default function Portfolio() {
     setMenuOpen(false);
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormStatus("sending");
+
+    // Log to Google Sheets (fire-and-forget)
+    fetch("https://script.google.com/macros/s/AKfycbzSbXcRJNjWyAHGBr_WWYAyyUiFUu6EbPRsYT-UuY8uT-FTisQx2_uaTEI_rkjS4-Cldg/exec", {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      }),
+    }).catch(() => {});
+
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          access_key: "c693d8c3-3713-49b2-a4ec-46ce4beb553b",
+          from_name: "Portfolio Contact",
+          subject: formData.subject,
+          name: formData.name,
+          email: formData.email,
+          topic: formData.subject,
+          message: formData.message,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFormStatus("sent");
+        setFormData({ name: "", email: "", subject: "", message: "" });
+        setTimeout(() => setFormStatus("idle"), 5000);
+      } else {
+        setFormStatus("error");
+        setTimeout(() => setFormStatus("idle"), 4000);
+      }
+    } catch {
+      setFormStatus("error");
+      setTimeout(() => setFormStatus("idle"), 4000);
+    }
+  };
+
   const navItems = [
     { id: "about", label: "About" },
     { id: "projects", label: "Projects" },
@@ -88,6 +138,13 @@ export default function Portfolio() {
   const filteredProjects = activeFilter === "All"
     ? PROJECTS
     : PROJECTS.filter(p => p.category === activeFilter);
+
+  const inputStyle = {
+    width: "100%", padding: "12px 16px", borderRadius: 8,
+    border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)",
+    color: "#E8E6E1", fontSize: 14, fontFamily: "inherit", outline: "none",
+    transition: "border-color 0.3s",
+  };
 
   return (
     <div style={{
@@ -114,6 +171,10 @@ export default function Portfolio() {
           0% { background-position: -200% 0; }
           100% { background-position: 200% 0; }
         }
+        @keyframes scrollBounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(6px); }
+        }
         @media (prefers-reduced-motion: reduce) {
           *, *::before, *::after {
             animation: none !important;
@@ -121,110 +182,73 @@ export default function Portfolio() {
           }
         }
         .nav-link {
-          color: #8A8A8A;
-          text-decoration: none;
-          font-size: 13px;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: color 0.3s;
-          background: none;
-          border: none;
-          font-family: inherit;
+          color: #8A8A8A; text-decoration: none; font-size: 13px; letter-spacing: 1.5px;
+          text-transform: uppercase; cursor: pointer; transition: color 0.3s;
+          background: none; border: none; font-family: inherit;
         }
         .nav-link:hover { color: #C8A961; }
         .nav-link:focus-visible { outline: 2px solid #C8A961; outline-offset: 4px; border-radius: 2px; }
         .project-card {
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 16px;
-          cursor: pointer;
+          background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 16px; cursor: pointer;
           transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
+          position: relative; overflow: hidden; display: flex; flex-direction: column;
         }
         .project-card:hover {
-          background: rgba(255,255,255,0.04);
-          border-color: rgba(200,169,97,0.3);
+          background: rgba(255,255,255,0.04); border-color: rgba(200,169,97,0.3);
           transform: translateY(-4px);
         }
         .cta-btn:focus-visible, .modal-close:focus-visible {
-          outline: 2px solid #C8A961;
-          outline-offset: 3px;
+          outline: 2px solid #C8A961; outline-offset: 3px;
         }
         .shimmer-overlay {
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
+          position: absolute; top: 0; left: 0; right: 0; bottom: 0;
           background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.04) 50%, rgba(255,255,255,0) 100%);
-          background-size: 200% 100%;
-          animation: shimmer 3s infinite linear;
-          pointer-events: none;
-          border-radius: 10px;
+          background-size: 200% 100%; animation: shimmer 3s infinite linear;
+          pointer-events: none; border-radius: 10px;
         }
         .tag {
-          display: inline-block;
-          padding: 4px 12px;
-          border-radius: 20px;
-          font-size: 11px;
-          letter-spacing: 0.8px;
-          text-transform: uppercase;
-          border: 1px solid rgba(255,255,255,0.1);
-          color: #9A9A9A;
-          margin: 3px;
+          display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px;
+          letter-spacing: 0.8px; text-transform: uppercase;
+          border: 1px solid rgba(255,255,255,0.1); color: #9A9A9A; margin: 3px;
         }
         .filter-btn {
-          padding: 6px 18px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 500;
-          letter-spacing: 0.5px;
-          cursor: pointer;
-          transition: all 0.3s;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.03);
-          color: #777;
-          font-family: inherit;
+          padding: 6px 18px; border-radius: 20px; font-size: 12px; font-weight: 500;
+          letter-spacing: 0.5px; cursor: pointer; transition: all 0.3s;
+          border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+          color: #777; font-family: inherit;
         }
-        .filter-btn:hover {
-          border-color: rgba(200,169,97,0.3);
-          color: #C8A961;
-        }
-        .filter-btn.active {
-          background: #C8A961;
-          color: #0B0F1A;
-          border-color: #C8A961;
-          font-weight: 600;
-        }
+        .filter-btn:hover { border-color: rgba(200,169,97,0.3); color: #C8A961; }
+        .filter-btn.active { background: #C8A961; color: #0B0F1A; border-color: #C8A961; font-weight: 600; }
         .testimonial-card {
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 16px;
-          padding: 36px;
-          transition: all 0.4s;
+          background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 16px; padding: 36px; transition: all 0.4s;
         }
-        .testimonial-card:hover {
-          border-color: rgba(200,169,97,0.2);
-        }
+        .testimonial-card:hover { border-color: rgba(200,169,97,0.2); }
         .cta-btn {
-          display: inline-block;
-          padding: 16px 40px;
-          border: 1px solid #C8A961;
-          color: #C8A961;
-          text-decoration: none;
-          font-size: 13px;
-          letter-spacing: 2px;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: all 0.4s;
-          background: transparent;
-          font-family: inherit;
-          border-radius: 4px;
+          display: inline-block; padding: 16px 40px; border: 1px solid #C8A961;
+          color: #C8A961; text-decoration: none; font-size: 13px; letter-spacing: 2px;
+          text-transform: uppercase; cursor: pointer; transition: all 0.4s;
+          background: transparent; font-family: inherit; border-radius: 4px;
         }
         .cta-btn:hover { background: #C8A961; color: #0B0F1A; }
         .cta-btn-filled { background: #C8A961; color: #0B0F1A; border-color: #C8A961; }
         .cta-btn-filled:hover { background: #E8D5A3; border-color: #E8D5A3; }
+        .cv-btn {
+          padding: 8px 20px; border-radius: 6px; font-size: 12px; font-weight: 600;
+          letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+          transition: all 0.3s; border: 1px solid #C8A961; background: transparent;
+          color: #C8A961; font-family: inherit; text-decoration: none;
+          display: inline-flex; align-items: center; gap: 8px;
+        }
+        .cv-btn:hover { background: #C8A961; color: #0B0F1A; }
+        .glass-tag {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 8px 16px; border-radius: 8px;
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+          font-size: 13px; color: #AAAAAA;
+        }
+        .glass-tag span.tag-icon { font-size: 14px; }
         .section-label {
           font-size: 11px; letter-spacing: 4px; text-transform: uppercase;
           color: #C8A961; margin-bottom: 16px; font-weight: 500;
@@ -240,11 +264,18 @@ export default function Portfolio() {
           background: none; border: none; cursor: pointer; padding: 4px;
         }
         .hamburger span { width: 24px; height: 1.5px; background: #E8E6E1; transition: all 0.3s; }
-        .projects-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 24px;
+        .projects-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+        .contact-input:focus { border-color: rgba(200,169,97,0.5) !important; }
+        .contact-input::placeholder { color: #555; }
+        .contact-submit {
+          width: 100%; padding: 14px; border-radius: 8px; border: none;
+          background: #C8A961; color: #0B0F1A; font-size: 14px; font-weight: 600;
+          font-family: inherit; cursor: pointer; transition: all 0.3s;
+          letter-spacing: 1px; text-transform: uppercase;
         }
+        .contact-submit:hover { background: #E8D5A3; }
+        .contact-submit:disabled { opacity: 0.6; cursor: not-allowed; }
         @media (max-width: 768px) {
           .hamburger { display: flex; }
           .desktop-nav { display: none !important; }
@@ -253,18 +284,29 @@ export default function Portfolio() {
             background: rgba(11,15,26,0.97); display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 32px; z-index: 100;
             backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
           }
           .mobile-menu .nav-link { font-size: 18px; }
           .hero-inner { grid-template-columns: 1fr !important; }
-          .hero-image-wrap { display: none !important; }
+          .hero-image-wrap { order: -1; }
+          .hero-image-wrap > div { max-width: 180px !important; margin: 0 auto; }
+          .scroll-indicator { position: relative !important; bottom: auto !important; left: auto !important; transform: none !important; margin: 40px auto 0; }
           .about-grid { grid-template-columns: 1fr !important; gap: 48px !important; }
           .projects-grid { grid-template-columns: 1fr !important; }
+          .contact-grid { grid-template-columns: 1fr !important; }
           .modal-content { width: 95vw !important; height: 75vh !important; }
           .modal-header { padding: 16px 20px !important; }
+          #hero { padding-top: 88px !important; }
+        }
+        @media (max-width: 900px) and (orientation: landscape) {
+          #hero { min-height: 0 !important; padding-top: 88px !important; padding-bottom: 40px !important; }
+          .hero-inner { grid-template-columns: 1fr auto !important; }
+          .hero-image-wrap > div { max-width: 140px !important; }
+          .scroll-indicator { display: none !important; }
         }
         .modal-overlay {
           position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); z-index: 200;
+          background: rgba(0,0,0,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 200;
           display: flex; align-items: center; justify-content: center;
           animation: fadeIn 0.3s ease-out; cursor: pointer;
         }
@@ -325,9 +367,16 @@ export default function Portfolio() {
             </a>
           ))}
         </div>
-        <button className="hamburger" aria-label="Open menu" onClick={() => setMenuOpen(!menuOpen)}>
-          <span /><span /><span />
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {SHOW_CV && (
+            <a href={`${BASE}resume.pdf`} target="_blank" rel="noopener noreferrer" className="cv-btn">
+              <span>↓</span> CV
+            </a>
+          )}
+          <button className="hamburger" aria-label="Open menu" onClick={() => setMenuOpen(!menuOpen)}>
+            <span /><span /><span />
+          </button>
+        </div>
       </nav>
 
       {menuOpen && (
@@ -420,16 +469,12 @@ export default function Portfolio() {
               color: "#7A7A7A", fontSize: 17, lineHeight: 1.8, maxWidth: 520,
               marginBottom: 40, fontWeight: 300, animation: "fadeUp 1s ease-out 0.4s both",
             }}>
-              I help universities and organizations transform complex data into actionable
-              insight. Using Power BI, SQL Server, Python, and the Microsoft Power
-              Platform, I build analytics, reporting, and automation solutions that improve
-              visibility, strengthen governance, and support better decision-making across
-              accreditation, strategic planning, grants management, and institutional
-              performance monitoring.
+              I build Power BI dashboards, analytics systems, and automation solutions
+              that turn institutional data into clear, confident decisions.
             </p>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", animation: "fadeUp 1s ease-out 0.6s both" }}>
               <button className="cta-btn cta-btn-filled" onClick={() => scrollTo("projects")}>View Projects</button>
-              <button className="cta-btn" onClick={() => scrollTo("contact")}>Get in Touch</button>
+              <button className="cta-btn" onClick={() => scrollTo("contact")}>Book a Call</button>
             </div>
           </div>
           <div className="hero-image-wrap" style={{
@@ -437,36 +482,36 @@ export default function Portfolio() {
             animation: "fadeIn 1.2s ease-out 0.4s both",
           }}>
             <div style={{
-              width: "100%", maxWidth: 400, aspectRatio: "3 / 4", borderRadius: 20,
-              overflow: "hidden", border: "2px solid rgba(200, 169, 97, 0.2)",
-              background: "linear-gradient(135deg, rgba(200,169,97,0.08), rgba(200,169,97,0.02))",
-              position: "relative",
+              width: "100%", maxWidth: 360, aspectRatio: "1 / 1", borderRadius: "50%",
+              overflow: "hidden", background: "linear-gradient(135deg, #C8A961, #8B7335)",
+              padding: 3, position: "relative",
             }}>
-              <img src="/my_portfolio/profile.JPG" alt="Nicholas Bediako Poku" style={{
+              <img src={`${BASE}profile.jpg`} alt="Nicholas Bediako Poku" style={{
                 width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top",
+                borderRadius: "50%",
               }} onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }} />
               <div style={{
                 display: "none", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                position: "absolute", top: 0, left: 0, right: 0, bottom: 0, gap: 16,
+                position: "absolute", top: 3, left: 3, right: 3, bottom: 3,
+                borderRadius: "50%", background: "#0B0F1A",
               }}>
                 <div style={{
-                  width: 80, height: 80, borderRadius: 40,
-                  background: "linear-gradient(135deg, #C8A961, #8B7335)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 32, fontWeight: 700, color: "#0B0F1A",
+                  fontSize: 48, fontWeight: 700, color: "#C8A961",
                   fontFamily: "'Playfair Display', Georgia, serif",
                 }}>NBP</div>
               </div>
             </div>
           </div>
         </div>
-        <div style={{
+        <div className="scroll-indicator" style={{
           position: "absolute", bottom: 40, left: "50%", transform: "translateX(-50%)",
           display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
           animation: "fadeIn 1s ease-out 1.2s both",
         }}>
-          <span style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: "#555" }}>Scroll</span>
-          <div style={{ width: 1, height: 32, background: "linear-gradient(to bottom, #555, transparent)" }} />
+          <div style={{ animation: "scrollBounce 2s ease-in-out infinite" }}>
+            <span style={{ fontSize: 10, letterSpacing: 3, textTransform: "uppercase", color: "#555" }}>Scroll</span>
+            <div style={{ width: 1, height: 32, background: "linear-gradient(to bottom, #555, transparent)", margin: "8px auto 0" }} />
+          </div>
         </div>
       </section>
 
@@ -503,6 +548,17 @@ export default function Portfolio() {
                 I am currently pursuing an MSc in Business and Data Analytics, further
                 strengthening my expertise in analytics, data strategy, and decision support.
               </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 24 }}>
+                {[
+                  { icon: "📍", text: "Kumasi, Ghana" },
+                  { icon: "💼", text: "Open to Opportunities" },
+                ].map(item => (
+                  <div key={item.text} className="glass-tag">
+                    <span className="tag-icon">{item.icon}</span>
+                    <span>{item.text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
             <div ref={skillsRef}>
               <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: "#666", marginBottom: 28, fontWeight: 500 }}>
@@ -616,7 +672,7 @@ export default function Portfolio() {
                             <rect key={i} x={28 + i * 32} y="15" width="28" height="16" rx="2" fill={`${proj.color}10`} />
                           ))}
                           {[0,1,2,3,4].map(i => (
-                            <rect key={i} x={28 + i * 16} y={68 - (10 + Math.sin(i) * 14 + i * 3)}
+                            <rect key={`b${i}`} x={28 + i * 16} y={68 - (10 + Math.sin(i) * 14 + i * 3)}
                               width="12" rx="1.5" height={10 + Math.sin(i) * 14 + i * 3}
                               fill={i === 3 ? proj.color : `${proj.color}20`} />
                           ))}
@@ -652,27 +708,45 @@ export default function Portfolio() {
           <h2 className="section-heading" style={{ marginBottom: 60 }}>
             What <span style={{ color: "#C8A961" }}>Colleagues</span> Say
           </h2>
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24,
-          }}>
-            {TESTIMONIALS.map((t, idx) => (
-              <div key={idx} className="testimonial-card" style={{
-                animation: testInView ? `fadeUp 0.8s ease-out ${idx * 0.15}s both` : "none",
-                opacity: testInView ? undefined : 0,
-              }}>
-                <div style={{ fontSize: 32, color: "#C8A961", marginBottom: 16, lineHeight: 1 }}>"</div>
-                <p style={{
-                  fontSize: 14, lineHeight: 1.8, color: "#AAAAAA",
-                  fontStyle: "italic", marginBottom: 24, fontWeight: 300,
-                }}>{t.quote}</p>
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#E8E6E1" }}>{t.name}</div>
-                  <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{t.role}</div>
-                  <div style={{ fontSize: 11, color: "#555", marginTop: 1 }}>{t.org}</div>
+          {TESTIMONIALS.length > 0 ? (
+            <div style={{
+              display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24,
+            }}>
+              {TESTIMONIALS.map((t, idx) => (
+                <div key={idx} className="testimonial-card" style={{
+                  animation: testInView ? `fadeUp 0.8s ease-out ${idx * 0.15}s both` : "none",
+                  opacity: testInView ? undefined : 0,
+                }}>
+                  <div style={{ fontSize: 32, color: "#C8A961", marginBottom: 16, lineHeight: 1 }}>"</div>
+                  <p style={{
+                    fontSize: 14, lineHeight: 1.8, color: "#AAAAAA",
+                    fontStyle: "italic", marginBottom: 24, fontWeight: 300,
+                  }}>{t.quote}</p>
+                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#E8E6E1" }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{t.role}</div>
+                    <div style={{ fontSize: 11, color: "#555", marginTop: 1 }}>{t.org}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 16, padding: "60px 40px", textAlign: "center",
+              animation: testInView ? "fadeUp 0.8s ease-out both" : "none",
+              opacity: testInView ? undefined : 0,
+            }}>
+              <div style={{ fontSize: 36, color: "#C8A961", marginBottom: 16 }}>"</div>
+              <p style={{ fontSize: 15, color: "#666", lineHeight: 1.8, maxWidth: 400, margin: "0 auto 20px" }}>
+                Testimonials from colleagues and collaborators are being collected and will appear here soon.
+              </p>
+              <a href="https://forms.cloud.microsoft/r/w9aYyepud5" target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: 12, color: "#C8A961", textDecoration: "none", letterSpacing: 1 }}>
+                Worked with me? Share your experience →
+              </a>
+            </div>
+          )}
         </div>
       </section>
 
@@ -681,31 +755,96 @@ export default function Portfolio() {
         padding: "120px clamp(24px, 5vw, 80px)", position: "relative",
         background: "linear-gradient(180deg, transparent, rgba(200,169,97,0.03))",
       }}>
-        <div style={{ maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div className="section-label">Contact</div>
           <h2 className="section-heading">
-            Let's Build Something<br />
-            <span style={{ color: "#C8A961" }}>Together</span>
+            Let's Build Something <span style={{ color: "#C8A961" }}>Together</span>
           </h2>
-          <p className="body-text" style={{ marginBottom: 48, maxWidth: 480, margin: "0 auto 48px" }}>
+          <p className="body-text" style={{ marginBottom: 48, maxWidth: 560 }}>
             Whether you need a Power BI dashboard, an institutional analytics system,
             or a Power Platform solution, I'd love to hear about your project.
           </p>
-          <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", marginBottom: 60 }}>
-            <a href="mailto:nbediakopoku@outlook.com" className="cta-btn cta-btn-filled" style={{ textDecoration: "none" }}>Send an Email</a>
-            <a href="https://www.linkedin.com/in/nicholas-bediako-poku-7789b3160/" target="_blank" rel="noopener noreferrer" className="cta-btn" style={{ textDecoration: "none" }}>LinkedIn</a>
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 48, flexWrap: "wrap" }}>
-            {[
-              { label: "Location", value: "Kumasi, Ghana" },
-              { label: "Availability", value: "Open to Opportunities" },
-              { label: "Specialization", value: "BI & Power Platform" },
-            ].map(item => (
-              <div key={item.label} style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 10, letterSpacing: 2, textTransform: "uppercase", color: "#555", marginBottom: 6 }}>{item.label}</div>
-                <div style={{ fontSize: 14, color: "#AAAAAA" }}>{item.value}</div>
+          <div className="contact-grid">
+            {/* Contact form */}
+            <div style={{
+              background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 16, padding: 32,
+            }}>
+              <h3 style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 22, fontWeight: 600, color: "#F5F3EF", marginBottom: 24,
+              }}>Send a message</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <input className="contact-input" type="text" name="name" id="contact-name" placeholder="Your name"
+                    value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    style={inputStyle} required />
+                  <input className="contact-input" type="email" name="email" id="contact-email" placeholder="Your email"
+                    value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    style={inputStyle} required />
+                </div>
+                <input className="contact-input" type="text" name="subject" id="contact-subject" placeholder="Subject"
+                  value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                  style={inputStyle} required />
+                <textarea className="contact-input" name="message" id="contact-message"
+                  placeholder="Tell me about your project or idea..."
+                  value={formData.message} onChange={e => setFormData({ ...formData, message: e.target.value })}
+                  rows={5} style={{ ...inputStyle, resize: "vertical" }} required />
+                <button className="contact-submit" onClick={handleSubmit}
+                  disabled={formStatus === "sending" || !formData.name || !formData.email || !formData.message}>
+                  {formStatus === "sending" ? "Sending..."
+                    : formStatus === "sent" ? "✓ Message Sent!"
+                    : formStatus === "error" ? "Failed. Try again."
+                    : "Send Message"}
+                </button>
+                {formStatus === "sent" && (
+                  <p style={{ fontSize: 13, color: "#059669", textAlign: "center" }}>
+                    Thanks for reaching out! I'll get back to you soon.
+                  </p>
+                )}
               </div>
-            ))}
+            </div>
+
+            {/* Contact info */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {[
+                { icon: "✉", iconBg: "rgba(200,169,97,0.12)", label: "Email", value: "nbediakopoku@outlook.com", sub: "I'll respond within 24 hours", href: "mailto:nbediakopoku@outlook.com" },
+                { icon: "📍", iconBg: "rgba(37,99,235,0.12)", label: "Location", value: "Kumasi, Ghana", sub: "Available for remote work worldwide" },
+                { icon: "💼", iconBg: "rgba(5,150,105,0.12)", label: "Availability", value: "Open to Opportunities", sub: "Freelance projects and full-time roles" },
+              ].map(item => (
+                <div key={item.label} style={{
+                  background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+                  borderRadius: 12, padding: "20px 24px", display: "flex", alignItems: "flex-start", gap: 16,
+                }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 10, background: item.iconBg,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 20, flexShrink: 0,
+                  }}>{item.icon}</div>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#E8E6E1", marginBottom: 2 }}>{item.label}</div>
+                    {item.href ? (
+                      <a href={item.href} style={{ fontSize: 14, color: "#C8A961", textDecoration: "none" }}>{item.value}</a>
+                    ) : (
+                      <div style={{ fontSize: 14, color: "#AAAAAA" }}>{item.value}</div>
+                    )}
+                    <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>{item.sub}</div>
+                  </div>
+                </div>
+              ))}
+              <a href="https://www.linkedin.com/in/nicholas-bediako-poku-7789b3160/" target="_blank" rel="noopener noreferrer"
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                  padding: "16px 24px", borderRadius: 12,
+                  background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+                  color: "#C8A961", textDecoration: "none", fontSize: 14, fontWeight: 500,
+                  letterSpacing: 1, transition: "all 0.3s",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(200,169,97,0.3)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; }}>
+                Connect on LinkedIn →
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -719,11 +858,16 @@ export default function Portfolio() {
           © {new Date().getFullYear()} Nicholas Bediako Poku. All rights reserved.
         </div>
         <div style={{ display: "flex", gap: 24 }}>
-          {["LinkedIn", "GitHub", "Email"].map(link => (
-            <a key={link} href="#" style={{ fontSize: 12, color: "#555", textDecoration: "none", transition: "color 0.3s" }}
+          {[
+            { name: "LinkedIn", url: "https://www.linkedin.com/in/nicholas-bediako-poku-7789b3160" },
+            { name: "GitHub", url: "https://github.com/nbediakopoku" },
+            { name: "Email", url: "mailto:nbediakopoku@outlook.com" },
+          ].map(link => (
+            <a key={link.name} href={link.url} target={link.name !== "Email" ? "_blank" : "_self"} rel="noopener noreferrer"
+              style={{ fontSize: 12, color: "#555", textDecoration: "none", transition: "color 0.3s" }}
               onMouseEnter={e => e.target.style.color = "#C8A961"}
               onMouseLeave={e => e.target.style.color = "#555"}>
-              {link}
+              {link.name}
             </a>
           ))}
         </div>

@@ -1,4 +1,9 @@
-export const CATEGORIES = ["All", "Institutional Analytics", "Commercial", "Quality Assurance"];
+const BASE = import.meta.env.BASE_URL;
+
+// Set to true when job hunting to show the "↓ CV" button in the nav; false to hide it.
+export const SHOW_CV = false;
+
+export const CATEGORIES =["All", "Institutional Analytics", "Commercial", "Quality Assurance"];
 
 export const PROJECTS = [
   {
@@ -11,7 +16,7 @@ export const PROJECTS = [
     tags: ["Power BI", "DAX", "SharePoint", "Power Query"],
     color: "#7C3AED",
     icon: "◇",
-    screenshot: "/my_portfolio/accreditation-dashboard.png",
+    screenshot: `${BASE}accreditation-dashboard.png`,
     embedUrl: null,
   },
   {
@@ -24,7 +29,7 @@ export const PROJECTS = [
     tags: ["Power BI", "DAX", "SQL Server", "Power Query"],
     color: "#2563EB",
     icon: "⊞",
-    screenshot: "/my_portfolio/admissions-dashboard.jpg",
+    screenshot: `${BASE}admissions-dashboard.jpg`,
     embedUrl: "https://app.powerbi.com/view?r=eyJrIjoiNTYzNGRmMTktODU4My00NWYyLWJiNDEtOTFkMTVjNmJiNTZhIiwidCI6IjEwNGQ4MDQ4LWZkMGMtNDNkNS1hNjMwLWZjNjI5ZTVkYWI1OSJ9",
   },
   {
@@ -37,7 +42,7 @@ export const PROJECTS = [
     tags: ["Power BI", "DAX", "SQL Server", "RDL Reports"],
     color: "#059669",
     icon: "◈",
-    screenshot: "/my_portfolio/graduation-dashboard.png",
+    screenshot: `${BASE}graduation-dashboard.png`,
     embedUrl: "https://app.powerbi.com/view?r=eyJrIjoiZTRkZTEzYWEtMGZjYS00YTQ1LTgzZTctNTJjM2FkMDI4N2U4IiwidCI6IjEwNGQ4MDQ4LWZkMGMtNDNkNS1hNjMwLWZjNjI5ZTVkYWI1OSJ9",
   },
   {
@@ -63,7 +68,7 @@ export const PROJECTS = [
     tags: ["Power BI", "DAX", "Data Modeling"],
     color: "#DC2626",
     icon: "◐",
-    screenshot: "/my_portfolio/restaurant-dashboard.png",
+    screenshot: `${BASE}restaurant-dashboard.png`,
     embedUrl: "https://app.powerbi.com/view?r=eyJrIjoiMTg5YTY1ZDItYjIxMi00NmRmLWExMWMtNGI2ZTg5N2E0Nzg4IiwidCI6IjEwNGQ4MDQ4LWZkMGMtNDNkNS1hNjMwLWZjNjI5ZTVkYWI1OSJ9",
   },
   {
@@ -76,34 +81,12 @@ export const PROJECTS = [
     tags: ["Power BI", "DAX", "Data Modeling", "Supply Chain"],
     color: "#EA580C",
     icon: "⬡",
-    screenshot: "/my_portfolio/supply-chain-dashboard.png",
+    screenshot: `${BASE}supply-chain-dashboard.png`,
     embedUrl: "https://app.powerbi.com/view?r=eyJrIjoiMjZiMmExODgtN2M5MC00Y2RlLThjOTEtN2FmNjhjNWE0NTI4IiwidCI6IjEwNGQ4MDQ4LWZkMGMtNDNkNS1hNjMwLWZjNjI5ZTVkYWI1OSJ9",
   },
 ];
 
-export const TESTIMONIALS = [
-  {
-    quote:
-      "Nicholas transformed how we visualize institutional data. His dashboards didn't just display numbers, they revealed patterns we'd been missing for years.",
-    name: "Dr. A. Mensah",
-    role: "Director, Quality Assurance",
-    org: "University Administration",
-  },
-  {
-    quote:
-      "The enrollment tracking system he built gave us real-time visibility into registration trends. It's become an indispensable tool for our planning cycle.",
-    name: "Prof. K. Owusu",
-    role: "Dean, Academic Affairs",
-    org: "College of Science",
-  },
-  {
-    quote:
-      "His ability to translate complex data requirements into clean, actionable dashboards is exceptional. He understands both the technical and the institutional side.",
-    name: "F. Adjei",
-    role: "Head of ICT",
-    org: "Planning Office",
-  },
-];
+export const TESTIMONIALS = [];
 
 export const SKILLS = [
   { name: "Power BI & DAX", level: 95 },
